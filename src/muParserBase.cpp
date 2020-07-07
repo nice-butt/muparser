@@ -697,13 +697,13 @@ namespace mu
       m_pParseFormula = &ParserBase::ParseString;
       m_pTokenReader->IgnoreUndefVar(false);
     }
-    catch(exception_type & /*e*/)
+    catch(exception_type & e)
     {
       // Make sure to stay in string parse mode, don't call ReInit()
       // because it deletes the array with the used variables
       m_pParseFormula = &ParserBase::ParseString;
       m_pTokenReader->IgnoreUndefVar(false);
-      throw;
+      throw e;
     }
 
     return m_pTokenReader->GetUsedVar();
@@ -1429,7 +1429,7 @@ namespace mu
     catch(ParserError &exc)
     {
       exc.SetFormula(m_pTokenReader->GetExpr());
-      throw;
+      throw exc;
     }
   }
 
