@@ -1752,14 +1752,12 @@ namespace mu
     #pragma omp parallel for schedule(static, nBulkSize/nMaxThreads) private(nThreadID)
     for (i=0; i<nBulkSize; ++i)
     {
-      if (thrown.load()) continue;
+      if (thrown.load(std::memory_order_relaxed)) continue;
       nThreadID = omp_get_thread_num();
       try {
         results[i] = ParseCmdCodeBulk(i, nThreadID);
       } catch (const ParserError& e) {
-        if (thrown.load()) continue;
         thrown.store(true);
-        std::lock_guard<std::mutex> lock(mu);
         error = e;
       }
 
