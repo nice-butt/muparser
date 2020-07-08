@@ -1746,31 +1746,35 @@ namespace mu
     ParserError error;
 
     int nMaxThreads = std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
-	  int nThreadID = 0, ct = 0;
+	  int ct = 0;
     omp_set_num_threads(nMaxThreads);
 
-    #pragma omp parallel for schedule(static, nBulkSize/nMaxThreads) private(nThreadID)
-    for (i=0; i<nBulkSize; ++i)
+#pragma omp parallel
     {
-      if (thrown.load(std::memory_order_relaxed)) continue;
-      nThreadID = omp_get_thread_num();
-      try {
-        results[i] = ParseCmdCodeBulk(i, nThreadID);
-      } catch (const ParserError& e) {
-        thrown.store(true);
-        error = e;
-      }
-
-/*
-      #ifdef DEBUG_OMP_STUFF
-      #pragma omp critical
+      const int nThreadID = omp_get_thread_num();
+#pragma omp for
+      for (i=0; i<nBulkSize; ++i)
       {
-        pThread[ct] = nThreadID;
-        pIdx[ct] = i;
-        ct++;
+        if (thrown.load()) continue;
+
+        try {
+          results[i] = ParseCmdCodeBulk(i, nThreadID);
+        } catch (const ParserError& e) {
+          thrown.store(true);
+          error = e;
+        }
+
+  /*
+        #ifdef DEBUG_OMP_STUFF
+        #pragma omp critical
+        {
+          pThread[ct] = nThreadID;
+          pIdx[ct] = i;
+          ct++;
+        }
+        #endif
+  */
       }
-      #endif
-*/
     }
 
     // re-throw
